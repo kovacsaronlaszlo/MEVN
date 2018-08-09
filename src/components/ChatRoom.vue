@@ -6,7 +6,7 @@
         Chat Room
       </h2>
 
-      <b-list-group class="panel-body">
+      <b-list-group class="panel-body" v-chat-scroll>
         <b-list-group-item v-for="(item, index) in chats" class="chat">
 
           <div class="left clearfix" v-if="item.nickname === nickname">
@@ -56,6 +56,10 @@
 <script>
 
 import axios from 'axios'
+import Vue from 'vue'
+import * as io from 'socket.io-client'
+import VueChatScroll from 'vue-chat-scroll'
+Vue.use(VueChatScroll)
 
 export default {
   name: "ChatRoom",
@@ -64,7 +68,8 @@ export default {
       chats: [],
       errors: [],
       nickname: this.$route.params.nickname,
-      chat: {}
+      chat: {},
+      socket: io('http://localhost:4000')
     }
   },
   created() {
@@ -75,12 +80,26 @@ export default {
       .catch(e => {
         this.errors.push(e)
       })
+
+    this.socket.on('new-message', (data)=> {
+      if (data.message.room === this.$route.params.id) {
+        this.chats.push(data.message)
+      }
+    }).bind(this)
   },
   methods: {
-    logout(id) {
+    logout() {
+      this.socket.emit(
+        'save-message',
+        {
+          room: this.chat.room,
+          nickname: this.chat.nickname,
+          message: this.chat.nickname + ' left this room',
+          created_date: new Date()
+        }
+      )
       this.$router.push({
-        name: 'JoinRoom',
-        params: {id:id}
+        name: 'RoomList'
       })
     },
     onSubmit(evt) {

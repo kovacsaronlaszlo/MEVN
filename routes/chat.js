@@ -1,7 +1,23 @@
 const express = require('express'),
   router = express.Router(),
   mongoose = require('mongoose'),
+  app = express(),
+  server = require('http').createServer(app),
+  io = require('socket.io')(server),
   Chat = require('../models/Chat.js');
+
+server.listen(4000);
+// socket io
+io.on('connection', (socket) => {
+  console.log('user connected');
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+  socket.on('save-message', (data) => {
+    console.log(data);
+    io.emit('new-message', {message: data});
+  });
+});
 
 // get összes chat
 router.get('/', (req,res,next) => {
